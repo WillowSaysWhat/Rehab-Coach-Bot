@@ -7,6 +7,9 @@
 * [Agents](#agents)
 
 ---
+# Version 0.0.1 (Branch)
+
+In this branch we are going to improve the UI so the chat window looks more professional.
 
 ## What is this app?
 
