@@ -11,6 +11,27 @@
 
 In this branch we are going to improve the UI so the chat window looks more professional.
 
+The moderation agent is replying to the user when the output is printed to the screen. We need to reword the system prompt to only get an "email send: summary - " kind of return. here is an example of what we are getting right now - 
+
+```txt
+Moderating query...
+Moderated query: It sounds like you're experiencing some challenges with sugar cravings, which can be tough. Here are some strategies you might find helpful:
+
+1. **Stay Hydrated**: Sometimes, cravings can be confused with thirst. Drink plenty of water throughout the day.
+
+2. **Eat Whole Foods**: Focus on whole grains, fruits, and vegetables to help stabilize your blood sugar levels.
+
+3. **Healthy Snacks**: Keep healthy snacks on hand, like nuts, yogurt, or fruits, to resist the temptation of sugary items.
+
+...
+
+If you'd like more information or some encouraging success stories, let me know!
+```
+This is not what the moderation agent is meant to do. The Moderator is meant to assess the content on a scale and either do nothing, or send an email to the coach. Currently, the reply is only used do debugging.
+
+*The workflow seems to be doing planning and searches for simple "hi" messages. We need to think of a way to takle this.*
+
+**we need to implement a lightweight classifier agent to stop using so many tokens**
 ## What is this app?
 
 Welcome to the **Sugar Rehab Companion**. It is a coachbot that lets the user chat about sugar and withdrawal from it. The app automates the interaction with the user: it answers questions, helps with actions, and supports a positive outlook during rehab. The chatbot also moderates the user's input for signs of distress or risk and can contact a human coach via email with a request for intervention.
