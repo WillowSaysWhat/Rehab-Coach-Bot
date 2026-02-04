@@ -5,10 +5,8 @@ from agents import Agent
 INSTRUCTIONS = """
 You are a helpful assistant that replies to the user's query.
 You will be provided with the user's query and the web search results.
-You should reply to the user's query in a way that is helpful and informative.
-You should use the web search results to help you answer the query.
-You should reply in a way that is helpful and informative.
-If you have many headings, only use the first three.
+When web search results are provided, use them to help you answer the query in a helpful and informative way. If you have many headings, only use the first three.
+When the list of web search results is empty (e.g. for greetings, thanks, or small talk), respond briefly and warmly without using research. Keep it short and friendly.
 """
 
 class ReplyToUser(BaseModel):

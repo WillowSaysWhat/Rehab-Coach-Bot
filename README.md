@@ -42,14 +42,38 @@ The Rehab Coachbot is designed to be embedded in a paywall dashboard, similar to
 
 ## How it works
 
-When the user sends a message in the chat UI (Gradio), the app runs a fixed pipeline:
+When the user sends a message in the chat UI (Gradio), the app first **routes** the message. If it’s a greeting or small talk (e.g. “hi”, “thanks”), the **Reply agent** answers briefly with no web search. If the message needs research (questions about sugar, cravings, or rehab), the app runs the full pipeline: **Planner** → **Moderator** → **Web search** → **Reply agent**, then streams the reply to the user.
 
-1. **Moderation** — The user’s message is assessed on a 1–6 scale. Depending on the level, the moderator either continues the flow, steers the user to positive content, or hands off to the **Email agent** to notify the coach.
-2. **Planning** — A **Planner agent** turns the user’s query into a small set of web search queries (e.g. two) aimed at supporting sugar rehab.
-3. **Search** — A **Web search agent** runs each planned query and returns short, factual summaries.
-4. **Reply** — A **Reply agent** combines the user’s query and the search results into one helpful answer (and optional follow-up questions), which is streamed back to the user.
+```mermaid
+flowchart TB
+    UserMsg[User message]
+    Router[Router: needs_web_search?]
+    SimpleReply[Reply agent with empty results]
+    Plan[Planner agent]
+    Moderate[Moderator agent]
+    Search[Web search agent]
+    ReplyWithResults[Reply agent with search results]
+    Stream[Stream reply to user]
 
-The UI streams status updates (e.g. “Giving you the best answer…”, “Formatting my reply…”) and then the final reply. Traces can be viewed in the OpenAI dashboard for debugging.
+    UserMsg --> Router
+    Router -->|No: greeting or small talk| SimpleReply
+    Router -->|Yes: needs research| Plan
+    SimpleReply --> Stream
+    Plan --> Moderate
+    Moderate --> Search
+    Search --> ReplyWithResults
+    ReplyWithResults --> Stream
+```
+
+**Full pipeline (when research is needed):**
+
+1. **Router** — Decides whether the message needs a web search. Greetings and small talk skip to a short reply.
+2. **Planning** — The **Planner agent** turns the query into a small set of web search queries (e.g. two) aimed at supporting sugar rehab.
+3. **Moderation** — The user’s message is assessed on a 1–6 scale. Depending on the level, the moderator either continues the flow, steers the user to positive content, or hands off to the **Email agent** to notify the coach.
+4. **Search** — The **Web search agent** runs each planned query and returns short, factual summaries.
+5. **Reply** — The **Reply agent** combines the user’s query and the search results into one helpful answer (and optional follow-up questions), which is streamed back to the user.
+
+The UI streams status updates (e.g. “Got it!”, “Giving you the best answer…”, “Formatting my reply…”) and then the final reply. Traces can be viewed in the OpenAI dashboard for debugging.
 
 ---
 
