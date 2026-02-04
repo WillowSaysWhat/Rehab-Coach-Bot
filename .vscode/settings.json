@@ -1,0 +1,4 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/Sugar_Rehab_Companion/.venv/Scripts/python.exe",
+  "python-envs.pythonProjects": []
+}
