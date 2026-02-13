@@ -8,7 +8,7 @@
 
 ---
 <p align="center">
-  <img src="\iterations_image.jpg" alt="Description of image" width="400">
+  <img src="interations_image.jpg" alt="Iterations Image" width="500">
 </p>
 ## What is this app?
 
