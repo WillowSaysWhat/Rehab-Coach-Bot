@@ -9,7 +9,7 @@
 ---
 
 <p align="center">
-  <img src="interations_image.jpg" alt="Iterations Image" width="500">
+  <img src="interations_image.jpg" alt="Iterations Image" >
 </p>
 
 ---
