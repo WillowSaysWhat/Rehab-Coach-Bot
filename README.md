@@ -7,9 +7,13 @@
 * [Agents](#agents)
 
 ---
+
 <p align="center">
   <img src="interations_image.jpg" alt="Iterations Image" width="500">
 </p>
+
+---
+
 ## What is this app?
 
 Welcome to the **Sugar Rehab Companion**. It is a coachbot that lets the user chat about sugar and withdrawal from it. The app automates the interaction with the user: it answers questions, helps with actions, and supports a positive outlook during rehab. The chatbot also moderates the user's input for signs of distress or risk and can contact a human coach via email with a request for intervention.
