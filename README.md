@@ -18,6 +18,8 @@
 
 Welcome to the **Sugar Rehab Companion**. It is a coachbot that lets the user chat about sugar and withdrawal from it. The app automates the interaction with the user: it answers questions, helps with actions, and supports a positive outlook during rehab. The chatbot also moderates the user's input for signs of distress or risk and can contact a human coach via email with a request for intervention.
 
+NOTE: Email API (SendGrid) is on a user trial, so its functionality probably doesn't work right now.
+
 The Rehab Coachbot is designed to be embedded in a paywall dashboard, similar to chatbots on product websites and government portals. While it is built to assist via conversation, further integrations and permissions could extend it to navigation and search within the dashboard.
 
 ---
