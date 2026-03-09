@@ -51,6 +51,7 @@ flowchart TB
     SimpleReply[Reply agent with empty results]
     Plan[Planner agent]
     Moderate[Moderator agent]
+    Email[Emailer agent]
     Search[Web search agent]
     ReplyWithResults[Reply agent with search results]
     Stream[Stream reply to user]
@@ -60,6 +61,7 @@ flowchart TB
     Router -->|Yes: needs research| Plan
     SimpleReply --> Stream
     Plan --> Moderate
+    Moderate -->|False: Email not already sent| Email
     Moderate --> Search
     Search --> ReplyWithResults
     ReplyWithResults --> Stream
