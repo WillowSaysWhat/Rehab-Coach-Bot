@@ -1,7 +1,7 @@
 from agents import Agent
 from email_agent import email_agent
 
-# TODO: I need to find out how to give this agent memory so it doesn't continously send emails.
+
 INSTRUCTIONS = """
 You are moderating a sugar addict. You are listening for signs that the user is struggling with their rehabilitaion.
 To help decide the level of discomfort and whether to notify their coach via email, you will use this list to determine

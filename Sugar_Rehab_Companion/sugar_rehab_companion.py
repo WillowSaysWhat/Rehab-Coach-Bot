@@ -13,12 +13,13 @@ class SugarRehabCompanion:
         trace_id = gen_trace_id()
         with trace("Sugar Rehab Companion trace", trace_id=trace_id):
             print(f"View trace: https://platform.openai.com/traces/trace?trace_id={trace_id}")
-            yield f"View trace: https://platform.openai.com/traces/trace?trace_id={trace_id}"
             print("Starting sugar rehab companion...")
 
             routing = await self.route_query(query)
             if not routing.needs_web_search:
-                yield "Got it!"
+                moderated_query = await self.moderate_query(query)
+                print(f"Moderated query: {moderated_query}")
+                yield "Got it!\n"
                 answer = await self.reply_to_user(query, [])
                 yield answer.reply
                 return
@@ -26,9 +27,9 @@ class SugarRehabCompanion:
             web_search_plan = await self.plan_searches(query)
             moderated_query = await self.moderate_query(query)
             print(f"Moderated query: {moderated_query}")
-            yield "Got it! Giving you the best answer I can find... This may take 15 seconds or so..."
+            yield "Got it!\n Giving you the best answer I can find... This may take 15 seconds or so...\n\n"
             web_search_results = await self.perform_searches(web_search_plan)
-            yield "Alright, just formatting my reply... Gimme a sec..."
+            yield "Alright, just formatting my reply... Gimme a sec...\n\n"
             answer = await self.reply_to_user(query, web_search_results)
             yield answer.reply
             
