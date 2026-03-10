@@ -18,6 +18,8 @@ class NeedsWebSearch(BaseModel):
         description="True if the message requires web search to answer; False for greetings, thanks, goodbye, or small talk."
     )
 
+#TODO: Install Ollama and use it to run the router agent.
+# we are using too many tokens with the gpt-4o-mini model to just check if the message requires a web search or moderation
 
 router_agent = Agent(
     name="RouterAgent",

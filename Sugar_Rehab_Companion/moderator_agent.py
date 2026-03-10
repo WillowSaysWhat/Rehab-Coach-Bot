@@ -1,7 +1,18 @@
 from agents import Agent
 from email_agent import email_agent
+from pydantic import BaseModel, Field
 
+# TODO: This object is not being clearly described to the model. We need to add more detail.[]
+class ModeratorOutput(BaseModel):
+    scale: int = Field(description="The scale of the user's situation. 1-6.")
+    action: str = Field(description="The action to take.")
+    subject: str = Field(description="The subject line of the email to send to the coach.")
+    body: str = Field(description="The body of the email to send to the coach.")
 
+# TODO: We need to add more detail about the returning the object above.
+#TODO: We need to reword the instructions so it returns a simple "moderation done! no action needed, or send email: ".
+
+#
 INSTRUCTIONS = """
 You are moderating a sugar addict. You are listening for signs that the user is struggling with their rehabilitaion.
 To help decide the level of discomfort and whether to notify their coach via email, you will use this list to determine
@@ -26,9 +37,11 @@ Remember that you are sending an email to the coach to notify them of the user's
 """
 
 # The email agent has a bool that will prevent multiple emails from being sent.
+# [x] add output type to Agent
 moderator_agent = Agent(
     name="Moderator agent",
     instructions=INSTRUCTIONS,
     handoffs=[email_agent],
     model="gpt-4o-mini",
+    output_type=ModeratorOutput,
 )

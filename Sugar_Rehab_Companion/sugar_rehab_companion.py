@@ -61,7 +61,7 @@ class SugarRehabCompanion:
             print(f"Searching... {num_completed}/{len(tasks)} completed")
         print("Finished searching")
         return results
-
+# BUG: search() does not pass the input string to Runner.run.
     async def search(self, item: WebSearchItem):
         """ Perform a search for the query """
         print(f"Searching for {item.query}...")
