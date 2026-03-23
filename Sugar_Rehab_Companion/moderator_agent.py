@@ -2,12 +2,8 @@ from agents import Agent
 from email_agent import email_agent
 from pydantic import BaseModel, Field
 
-# TODO: This object is not being clearly described to the model. We need to add more detail.[]
-class ModeratorOutput(BaseModel):
-    scale: int = Field(description="The scale of the user's situation. 1-6.")
-    action: str = Field(description="The action to take.")
-    subject: str = Field(description="The subject line of the email to send to the coach.")
-    body: str = Field(description="The body of the email to send to the coach.")
+# TODO: This object is not being clearly described to the model. We need to add more detail.[x]
+
 
 # TODO: We need to add more detail about the returning the object above.
 #TODO: We need to reword the instructions so it returns a simple "moderation done! no action needed, or send email: ".
@@ -26,14 +22,18 @@ where the user is on the scale and what action to take.
 6. The user has consumed sugar and is confessing to you.
 
 actions to take:
-if the user is on a scale of 1-5, and the scale is 1 or 2, continue to monitor the user. Answer the user's question or concern.
-if the user is on a scale of 1-5, and the scale is 3, itor the user. Navigate the user to positive-leaning answers and offer YouTube videos on success stories
-if the user is on a scale of 1-5, and the scale is 4, 5, or 6, notify the coach via email. give a short summary of the user's situation and ask the coach to contact the user.
+if the user is on 1, 2 or 3, continue to monitor the user.
+if the user is on 4, 5, or 6, notify the coach via email. give a short summary of the user's situation and ask the coach to contact the user.
 
 You will need to provide the email agent with a subject line and a body. 
 The subject line should be a short summary of the user's situation. 
 The body should be a detailed summary of the user's situation.
-Remember that you are sending an email to the coach to notify them of the user's situation. Use professional language and tone.
+Remember that you are handing off to the email agent to send an email to the coach to notify them of the user's situation. Use professional language and tone.
+
+Also, Remember that you are sending an email to the coach. Don't send a reply to the user. Notify the coach about the user's situation.
+here is an example of an email to the coach:
+Subject: User is struggling with their addiction
+Body: The user is struggling with their addiction. They are expressing feelings of hopelessness and desire to give up on their rehabilitaion. They have consumed sugar and are confessing to you.
 """
 
 # The email agent has a bool that will prevent multiple emails from being sent.
@@ -43,5 +43,5 @@ moderator_agent = Agent(
     instructions=INSTRUCTIONS,
     handoffs=[email_agent],
     model="gpt-4o-mini",
-    output_type=ModeratorOutput,
+    
 )

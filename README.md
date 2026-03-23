@@ -7,31 +7,34 @@
 * [Agents](#agents)
 
 ---
-# Version 0.0.1 (Branch)
+# Version 0.0.2 (Branch) Improvements.
 
-In this branch we are going to improve the UI so the chat window looks more professional.
+The 3rd iteration of the coach bot. We are now going to focus on improving the agents.
 
-The moderation agent is replying to the user when the output is printed to the screen. We need to reword the system prompt to only get an "email send: summary - " kind of return. here is an example of what we are getting right now - 
+**We want to implement memory!**
 
+but first..
+
+*Still on the list* **FIXED** The moderation agent is replying to the user when the output is printed to the screen. We need to reword the system prompt to only get an "email send: summary - " kind of return. here is an example of what we are getting right now - **shift to object:** we are using structured output instead of a paragraph reply. It should now say "moderation done: No action taken. Or Email sent. 
+
+**Reply Agent** *FIXED* is a helpful assistant. This won't cut it. We need to change the prompt to reflect an addiction coach. This was discovered by a simple "I ate sugar". While the moderator bot did its job and sent an alert to the human coach, the relpy bot replyed with:
 ```txt
-Moderating query...
-Moderated query: It sounds like you're experiencing some challenges with sugar cravings, which can be tough. Here are some strategies you might find helpful:
-
-1. **Stay Hydrated**: Sometimes, cravings can be confused with thirst. Drink plenty of water throughout the day.
-
-2. **Eat Whole Foods**: Focus on whole grains, fruits, and vegetables to help stabilize your blood sugar levels.
-
-3. **Healthy Snacks**: Keep healthy snacks on hand, like nuts, yogurt, or fruits, to resist the temptation of sugary items.
-
-...
-
-If you'd like more information or some encouraging success stories, let me know!
+It sounds like you enjoyed some sweet treats! Do you have a favorite dessert you like to indulge in?
 ```
-This is not what the moderation agent is meant to do. The Moderator is meant to assess the content on a scale and either do nothing, or send an email to the coach. Currently, the reply is only used do debugging.
+This is unacceptable. So we will need to change the prompt to prevent this.
 
-*The workflow seems to be doing planning and searches for simple "hi" messages. We need to think of a way to takle this.*
+*make the router agent cheaper* We want to install Ollama to offset token spend. The Router agent only need to decide 2 things:
+1. Is the message just general introductions? "hi", "I'm okay".
+2. do we need a web search.
 
-**we need to implement a lightweight classifier agent to stop using so many tokens**
+
+This can be achieved with a local model. Chit-chat doesn't need complete moderation. 
+
+In fact, we might need to rethink how the router agent, and the `run()` workflow is spending tokens. 
+
+**Fixed:** We added moderation to the GREETING OR SMALL TALK as this would have missed possible warning signs in the chat. 
+**New problem** But now we are looking at ways to make sure we are not moderating "hello" as mentioned above. Spending tokens on small talk seems silly.
+
 ## What is this app?
 
 Welcome to the **Sugar Rehab Companion**. It is a coachbot that lets the user chat about sugar and withdrawal from it. The app automates the interaction with the user: it answers questions, helps with actions, and supports a positive outlook during rehab. The chatbot also moderates the user's input for signs of distress or risk and can contact a human coach via email with a request for intervention.
@@ -57,7 +60,7 @@ flowchart TB
     Stream[Stream reply to user]
 
     UserMsg --> Router
-    Router -->|No: greeting or small talk| SimpleReply
+    Router -->|No: greeting or small talk
     Router -->|Yes: needs research| Plan
     SimpleReply --> Stream
     Plan --> Moderate

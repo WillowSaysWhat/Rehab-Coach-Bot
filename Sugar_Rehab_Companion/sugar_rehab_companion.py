@@ -14,12 +14,14 @@ class SugarRehabCompanion:
         with trace("Sugar Rehab Companion trace", trace_id=trace_id):
             print(f"View trace: https://platform.openai.com/traces/trace?trace_id={trace_id}")
             print("Starting sugar rehab companion...")
-
+# NOTE: We need to install Ollama and use it to run the route query. See router_agent.py for more details.
             routing = await self.route_query(query)
+            #TODO: Decide on how to handle moderation so we can catch behaviour that can be reported to the coach.
+            # a message that talks about relapsing can be flagged as chit-chat right now.
             if not routing.needs_web_search:
                 moderated_query = await self.moderate_query(query)
                 print(f"Moderated query: {moderated_query}")
-                yield "Got it!\n"
+                # yield "Got it!\n"
                 answer = await self.reply_to_user(query, [])
                 yield answer.reply
                 return
@@ -27,9 +29,7 @@ class SugarRehabCompanion:
             web_search_plan = await self.plan_searches(query)
             moderated_query = await self.moderate_query(query)
             print(f"Moderated query: {moderated_query}")
-            yield "Got it!\n Giving you the best answer I can find... This may take 15 seconds or so...\n\n"
             web_search_results = await self.perform_searches(web_search_plan)
-            yield "Alright, just formatting my reply... Gimme a sec...\n\n"
             answer = await self.reply_to_user(query, web_search_results)
             yield answer.reply
             
@@ -61,7 +61,7 @@ class SugarRehabCompanion:
             print(f"Searching... {num_completed}/{len(tasks)} completed")
         print("Finished searching")
         return results
-# BUG: search() does not pass the input string to Runner.run.
+# BUG: search() does not pass the input string to Runner.run according to CursorAI.
     async def search(self, item: WebSearchItem):
         """ Perform a search for the query """
         print(f"Searching for {item.query}...")
