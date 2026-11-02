@@ -1,5 +1,11 @@
 # Rehab-Coach-Bot
 
+Coach escalations use the **Coach Notification Agent** to attempt both Resend email
+and Pushover push notifications. Email goes only to `willowsayswhat@gmail.com`.
+Set `RESEND_API_KEY`, `PUSHOVER_API_TOKEN`, and `PUSHOVER_USER_KEY` in the root `.env`.
+Each channel is attempted once per moderation run, even if the other fails.
+Separate provider results and Resend acceptance IDs are logged in the app console.
+
 ## Table of Contents
 * [How to run this program](setup.md)
 * [What is this app?](#what-is-this-app)
@@ -7,37 +13,16 @@
 * [Agents](#agents)
 
 ---
-# Version 0.0.2 (Branch) Improvements.
+# Version 0.0.3 (Branch) Improvements.
 
-The 3rd iteration of the coach bot. We are now going to focus on improving the agents.
-
-**We want to implement memory!**
-
-but first..
-
-*Still on the list* **FIXED** The moderation agent is replying to the user when the output is printed to the screen. We need to reword the system prompt to only get an "email send: summary - " kind of return. here is an example of what we are getting right now - **shift to object:** we are using structured output instead of a paragraph reply. It should now say "moderation done: No action taken. Or Email sent. 
-
-**Reply Agent** *FIXED* is a helpful assistant. This won't cut it. We need to change the prompt to reflect an addiction coach. This was discovered by a simple "I ate sugar". While the moderator bot did its job and sent an alert to the human coach, the relpy bot replyed with:
-```txt
-It sounds like you enjoyed some sweet treats! Do you have a favorite dessert you like to indulge in?
-```
-This is unacceptable. So we will need to change the prompt to prevent this.
-
-*make the router agent cheaper* We want to install Ollama to offset token spend. The Router agent only need to decide 2 things:
-1. Is the message just general introductions? "hi", "I'm okay".
-2. do we need a web search.
+Now we want memory.
 
 
-This can be achieved with a local model. Chit-chat doesn't need complete moderation. 
 
-In fact, we might need to rethink how the router agent, and the `run()` workflow is spending tokens. 
-
-**Fixed:** We added moderation to the GREETING OR SMALL TALK as this would have missed possible warning signs in the chat. 
-**New problem** But now we are looking at ways to make sure we are not moderating "hello" as mentioned above. Spending tokens on small talk seems silly.
 
 ## What is this app?
 
-Welcome to the **Sugar Rehab Companion**. It is a coachbot that lets the user chat about sugar and withdrawal from it. The app automates the interaction with the user: it answers questions, helps with actions, and supports a positive outlook during rehab. The chatbot also moderates the user's input for signs of distress or risk and can contact a human coach via email with a request for intervention.
+Welcome to the **Sugar Rehab Companion**. It is a coachbot that lets the user chat about sugar and withdrawal from it. The app automates the interaction with the user: it answers questions, helps with actions, and supports a positive outlook during rehab. The chatbot also moderates the user's input for signs of distress or risk and can contact a human coach via Pushover push notification with a request for intervention.
 
 The Rehab Coachbot is designed to be embedded in a paywall dashboard, similar to chatbots on product websites and government portals. While it is built to assist via conversation, further integrations and permissions could extend it to navigation and search within the dashboard.
 
@@ -54,7 +39,7 @@ flowchart TB
     SimpleReply[Reply agent with empty results]
     Plan[Planner agent]
     Moderate[Moderator agent]
-    Email[Emailer agent]
+    Email[Pushover notification agent]
     Search[Web search agent]
     ReplyWithResults[Reply agent with search results]
     Stream[Stream reply to user]
@@ -64,7 +49,7 @@ flowchart TB
     Router -->|Yes: needs research| Plan
     SimpleReply --> Stream
     Plan --> Moderate
-    Moderate -->|False: Email not already sent| Email
+    Moderate -->|Coach alert needed| Email
     Moderate --> Search
     Search --> ReplyWithResults
     ReplyWithResults --> Stream
@@ -74,7 +59,7 @@ flowchart TB
 
 1. **Router** — Decides whether the message needs a web search. Greetings and small talk skip to a short reply.
 2. **Planning** — The **Planner agent** turns the query into a small set of web search queries (e.g. two) aimed at supporting sugar rehab.
-3. **Moderation** — The user’s message is assessed on a 1–6 scale. Depending on the level, the moderator either continues the flow, steers the user to positive content, or hands off to the **Email agent** to notify the coach.
+3. **Moderation** — The user’s message is assessed on a 1–6 scale. Depending on the level, the moderator either continues the flow, steers the user to positive content, or hands off to the **Coach Notification Agent** to notify the coach.
 4. **Search** — The **Web search agent** runs each planned query and returns short, factual summaries.
 5. **Reply** — The **Reply agent** combines the user’s query and the search results into one helpful answer (and optional follow-up questions), which is streamed back to the user.
 
@@ -90,13 +75,15 @@ Listens to the user’s message and places it on a 1–6 scale of engagement and
 
 - **1–2** — General life or sugar-related chat; no escalation. The conversation continues and the rest of the pipeline runs (plan → search → reply).
 - **3** — User is asking for ways to add sugar or similar; the moderator steers toward positive content (e.g. success stories).
-- **4–6** — Frustration, desire to give up, or confession of having consumed sugar; the moderator **hands off to the Email agent** so the coach gets one email with a short subject and detailed body. A guard in the Email agent limits this to one email per run.
+- **4–6** — Frustration, desire to give up, or confession of having consumed sugar; the moderator **hands off to the Coach Notification Agent** so the coach gets both an HTML email and a concise push alert. The tool allows one delivery attempt per moderation run.
 
 The moderator does not answer the user directly; it decides whether to escalate and then the main flow (planner → search → reply) still runs to produce the chat response.
 
-### Email agent
+### Coach Notification Agent
 
-Used only when the **Moderator agent** hands off (scale 4–6). It has a single tool, `send_email(subject, body)`, and sends one HTML email to the coach (via SendGrid). The agent is instructed to send one well-formatted email with a clear subject and body. A boolean guard prevents sending more than one email per session.
+Used when the **Moderator agent** hands off (scale 4–6). Its `notify_coach(subject, html, message)` tool attempts both Resend and Pushover concurrently. The agent chooses the email subject and HTML and a concise plain-text push summary. Email is fixed to `willowsayswhat@gmail.com`. Both channels share a guard allowing one attempt per moderation run, and return separate results. A later chat message may generate new alerts.
+
+See [notification setup](setup.md#pushover-coach-notifications) for credentials.
 
 ### Planner agent
 

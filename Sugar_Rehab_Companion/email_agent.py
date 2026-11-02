@@ -1,33 +1,20 @@
-import os
-from typing import Dict
-
-import sendgrid
-from sendgrid.helpers.mail import Email, Mail, Content, To
 from agents import Agent, function_tool
+from resend_client import send_email
 
-# variable that prevents multiple emails from being sent.
-email_sent = False
 
 @function_tool
-def send_email(subject: str, body: str):
-    #guard against multiple emails being sent.
-    if email_sent:
-        return "Email already sent"
-    
-    """send an Email with the given subject and HTML body."""
-    sg = sendgrid.SendGridAPIClient(api_key=os.getenv("SENDGRID_API_KEY"))
-    from_email = Email("willowsayswhat@gmail.com")
-    to_email = To("willowsayswhat@gmail.com")
-    content = Content("text/html", body)
-    mail = Mail(from_email, to_email, subject, content).get()
-    print( "Sending email..." )
-    response = sg.client.mail.send.post(request_body=mail)
-    print (f"Email sent: {response.status_code}")
-    return "successfully sent email"
+def email_tool(subject: str, html: str) -> str:
+    """Send an email only to the coach with an agent-written subject and HTML."""
+    return send_email(subject, html)
+
+
 #NOTE: This is the instructions that decides the tone of the email.
 INSTRUCTIONS = """ You are a professional email agent in a sugar addiction rehabilitaion program.
 You are able to send a nicely formatted email. 
-You should use your tool to send one email to the coach, providing a subject and body.
+Use email_tool once to send an email to the coach at willowsayswhat@gmail.com.
+Choose the subject and html arguments yourself based on the user's situation.
+Format html as a readable HTML email. The recipient and sender are fixed by the tool.
+Report the tool's actual result; do not claim success on failure or retry an uncertain send.
 The subject should be a short summary of the user's situation.
 The body should be a detailed summary of the user's situation.
 Use professional language and tone.
@@ -40,7 +27,7 @@ Body: The user is struggling with their addiction. They are expressing feelings 
 email_agent = Agent(
     name="Email Agent",
     instructions=INSTRUCTIONS,
-    tools=[send_email],
+    tools=[email_tool],
     model="gpt-4o-mini",
     
 )

@@ -122,13 +122,17 @@ In the project root (`Rehab-Coach-Bot`), create a file named `.env` (no extensio
 | Variable | Purpose |
 |----------|---------|
 | `OPENAI_API_KEY` | Used by the agents (OpenAI API). Get a key from [platform.openai.com](https://platform.openai.com/api-keys). |
-| `SENDGRID_API_KEY` | Used for email alerts (SendGrid). Optional if you don’t need coach email notifications. Get a key from [SendGrid](https://sendgrid.com/). |
+| `PUSHOVER_API_TOKEN` | Application API token for coach push notifications. |
+| `PUSHOVER_USER_KEY` | Recipient coach’s Pushover user or group key. |
+| `PUSHOVER_DEVICE` | Optional device name; omit to notify all recipient devices. |
 
 Example `.env` (use your own keys):
 
 ```env
 OPENAI_API_KEY=sk-your-openai-key-here
-SENDGRID_API_KEY=SG.your-sendgrid-key-here
+PUSHOVER_API_TOKEN=your-application-token
+PUSHOVER_USER_KEY=your-coach-user-key
+# PUSHOVER_DEVICE=your-device-name
 ```
 
 Do not commit `.env` or share these keys; `.env` should already be in `.gitignore`.
@@ -175,3 +179,30 @@ For correct import resolution and IntelliSense (e.g. “Import gradio could not 
 | Run app | `python chat_window.py` |
 
 Ensure `.env` exists in the repo root with at least `OPENAI_API_KEY` set before running.
+
+## Pushover coach notifications
+
+**Current routing:** the moderator hands off to the Coach Notification Agent,
+which attempts both Resend email and Pushover on every escalation.
+Set `RESEND_API_KEY` in the root `.env` and restart the app. Emails use
+`onboarding@resend.dev` and the fixed recipient `willowsayswhat@gmail.com`.
+Check the app console for the Resend email ID or rejection details.
+Configure the Pushover credentials below as well. Both channels are attempted
+independently, and each result is logged. A failed channel does not prevent the other.
+
+1. Install Pushover on the coach’s phone and sign in.
+2. [Register a Pushover application](https://pushover.net/apps/build) and copy its API token into `PUSHOVER_API_TOKEN` in the root `.env`.
+3. Copy the recipient’s user key from their [Pushover dashboard](https://pushover.net/) into `PUSHOVER_USER_KEY`.
+4. Optionally set `PUSHOVER_DEVICE` to a registered device name. Restart the app after editing `.env`.
+
+The combined notification tool uses the Pushover settings above. Missing Pushover credentials produce a notification failure result; they do not trigger an email fallback.
+
+The sender follows the [Pushover Message API](https://pushover.net/api): plain-text titles up to 250 characters and messages up to 1024 characters. Requests time out after 10 seconds. A successful API response confirms acceptance, not that the coach has read the alert. Each moderation run permits one delivery attempt; a later chat message may trigger another alert. Failed or uncertain deliveries are not automatically retried.
+
+To send a manual test alert from `Sugar_Rehab_Companion` with your virtual environment active:
+
+```bash
+python -c "from dotenv import load_dotenv; load_dotenv(); from pushover_client import send_push_notification; print(send_push_notification('Rehab Coach test', 'Pushover notifications are configured.'))"
+```
+
+This command sends a real notification to the configured recipient.

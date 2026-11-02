@@ -83,5 +83,8 @@ class SugarRehabCompanion:
     async def moderate_query(self, query: str):
         """ Moderate the query """
         print("Moderating query...")
-        result = await Runner.run(moderator_agent, f"Query: {query}")
+        result = await Runner.run(
+            moderator_agent, f"Query: {query}",
+            context={"coach_notification_attempted": False},
+        )
         return result.final_output_as(str)
