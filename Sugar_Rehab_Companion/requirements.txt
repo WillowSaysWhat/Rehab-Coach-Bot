@@ -1,5 +1,7 @@
 openai
 openai-agents
 gradio
+fastapi
+uvicorn
 python-dotenv
 resend

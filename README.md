@@ -1,98 +1,57 @@
-# Rehab-Coach-Bot
+# Sugar Rehab Companion
 
-Coach escalations use the **Coach Notification Agent** to attempt both Resend email
-and Pushover push notifications. Email goes only to `willowsayswhat@gmail.com`.
-Set `RESEND_API_KEY`, `PUSHOVER_API_TOKEN`, and `PUSHOVER_USER_KEY` in the root `.env`.
-Each channel is attempted once per moderation run, even if the other fails.
-Separate provider results and Resend acceptance IDs are logged in the app console.
+Sugar Rehab Companion is a coaching chat for people working to change their sugar habits. Use it to talk through cravings, reflect on how the day went, or plan a manageable next step. The coach can answer questions about sugar habits and flag messages for human follow-up through email and push notifications.
 
-## Table of Contents
-* [How to run this program](setup.md)
-* [What is this app?](#what-is-this-app)
-* [How it works](#how-it-works)
-* [Agents](#agents)
+![Sugar Rehab Companion](image.png)
 
----
-# Version 0.0.3 (Branch) Improvements.
+## Run locally
 
-Now we want memory.
+You’ll need Node.js 22, Python 3, and an OpenAI API key. Generate a shared secret with Node.js.
 
+```powershell
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
 
+Put `OPENAI_API_KEY` and the generated `COACH_API_TOKEN` in the repository root `.env`. In `frontend/.env.local`, set the same token and point Next.js at the local Python API.
 
+```dotenv
+COACH_API_URL=http://127.0.0.1:8000
+COACH_API_TOKEN=paste-the-same-generated-token-here
+```
 
-## What is this app?
+From the repository root, start FastAPI in one PowerShell terminal.
 
-Welcome to the **Sugar Rehab Companion**. It is a coachbot that lets the user chat about sugar and withdrawal from it. The app automates the interaction with the user: it answers questions, helps with actions, and supports a positive outlook during rehab. The chatbot also moderates the user's input for signs of distress or risk and can contact a human coach via Pushover push notification with a request for intervention.
+```powershell
+python -m pip install -r Sugar_Rehab_Companion/requirements.txt
+python -m uvicorn app:app --app-dir Sugar_Rehab_Companion
+```
 
-The Rehab Coachbot is designed to be embedded in a paywall dashboard, similar to chatbots on product websites and government portals. While it is built to assist via conversation, further integrations and permissions could extend it to navigation and search within the dashboard.
+Start Next.js in another terminal.
 
----
+```powershell
+cd frontend
+npm.cmd install
+npm.cmd run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) and send a message. See the [setup guide](setup.md#nextjs-chat) for more details.
 
 ## How it works
 
-When the user sends a message in the chat UI (Gradio), the app first **routes** the message. If it’s a greeting or small talk (e.g. “hi”, “thanks”), the **Reply agent** answers briefly with no web search. If the message needs research (questions about sugar, cravings, or rehab), the app runs the full pipeline: **Planner** → **Moderator** → **Web search** → **Reply agent**, then streams the reply to the user.
+- The [Next.js frontend](frontend/app/page.tsx) shows starter prompts, a waiting state, and Markdown replies. If a request fails, the composer restores the message for a manual retry.
+- The [Next.js chat route](frontend/app/api/chat/route.ts) forwards the latest message to the [FastAPI backend](Sugar_Rehab_Companion/app.py) using the server-side shared token.
+- The [Python coach](Sugar_Rehab_Companion/sugar_rehab_companion.py) routes and moderates each message. For questions that need research, it also plans and attempts web searches before composing its reply. The API returns the completed reply as JSON. The current search implementation omits the planned query when calling the search agent, so replies may lack search results.
+- When moderation escalates a message, the [notification agent](Sugar_Rehab_Companion/notification_agent.py) can attempt both Resend email and Pushover push once per moderation run. Configure `RESEND_API_KEY`, `PUSHOVER_API_TOKEN`, and `PUSHOVER_USER_KEY` using the [notification setup guide](setup.md#pushover-coach-notifications).
 
-```mermaid
-flowchart TB
-    UserMsg[User message]
-    Router[Router: needs_web_search?]
-    SimpleReply[Reply agent with empty results]
-    Plan[Planner agent]
-    Moderate[Moderator agent]
-    Email[Pushover notification agent]
-    Search[Web search agent]
-    ReplyWithResults[Reply agent with search results]
-    Stream[Stream reply to user]
+The current page holds the transcript in memory, and refreshing clears it. The coach receives only the latest message. User sign-in and saved conversations are future work.
 
-    UserMsg --> Router
-    Router -->|No: greeting or small talk
-    Router -->|Yes: needs research| Plan
-    SimpleReply --> Stream
-    Plan --> Moderate
-    Moderate -->|Coach alert needed| Email
-    Moderate --> Search
-    Search --> ReplyWithResults
-    ReplyWithResults --> Stream
-```
+## Deploy to Vercel
 
-**Full pipeline (when research is needed):**
+Create two projects from the same repository.
 
-1. **Router** — Decides whether the message needs a web search. Greetings and small talk skip to a short reply.
-2. **Planning** — The **Planner agent** turns the query into a small set of web search queries (e.g. two) aimed at supporting sugar rehab.
-3. **Moderation** — The user’s message is assessed on a 1–6 scale. Depending on the level, the moderator either continues the flow, steers the user to positive content, or hands off to the **Coach Notification Agent** to notify the coach.
-4. **Search** — The **Web search agent** runs each planned query and returns short, factual summaries.
-5. **Reply** — The **Reply agent** combines the user’s query and the search results into one helpful answer (and optional follow-up questions), which is streamed back to the user.
+| Project | Root directory | Server environment variables |
+| --- | --- | --- |
+| FastAPI | `Sugar_Rehab_Companion` | `OPENAI_API_KEY`, `COACH_API_TOKEN`, and notification credentials |
+| Next.js | `frontend` | `COACH_API_URL` set to the deployed FastAPI origin, and the matching `COACH_API_TOKEN` |
 
-The UI streams status updates (e.g. “Got it!”, “Giving you the best answer…”, “Formatting my reply…”) and then the final reply. Traces can be viewed in the OpenAI dashboard for debugging.
-
----
-
-## Agents
-
-### Moderator agent
-
-Listens to the user’s message and places it on a 1–6 scale of engagement and risk:
-
-- **1–2** — General life or sugar-related chat; no escalation. The conversation continues and the rest of the pipeline runs (plan → search → reply).
-- **3** — User is asking for ways to add sugar or similar; the moderator steers toward positive content (e.g. success stories).
-- **4–6** — Frustration, desire to give up, or confession of having consumed sugar; the moderator **hands off to the Coach Notification Agent** so the coach gets both an HTML email and a concise push alert. The tool allows one delivery attempt per moderation run.
-
-The moderator does not answer the user directly; it decides whether to escalate and then the main flow (planner → search → reply) still runs to produce the chat response.
-
-### Coach Notification Agent
-
-Used when the **Moderator agent** hands off (scale 4–6). Its `notify_coach(subject, html, message)` tool attempts both Resend and Pushover concurrently. The agent chooses the email subject and HTML and a concise plain-text push summary. Email is fixed to `willowsayswhat@gmail.com`. Both channels share a guard allowing one attempt per moderation run, and return separate results. A later chat message may generate new alerts.
-
-See [notification setup](setup.md#pushover-coach-notifications) for credentials.
-
-### Planner agent
-
-Takes the user’s raw query and returns a **WebSearchPlan**: a list of search items (e.g. two), each with a `query` (search string) and a `reason` (why it helps). The instructions stress that the user is in sugar rehab, so planned searches should support quitting sugar and staying motivated rather than encouraging use.
-
-### Web search agent
-
-Has access to a **WebSearchTool** (web search API). Given a search term (and reason), it returns a concise 2–3 paragraph summary (under 300 words), focused on facts for a downstream synthesizer. The companion runs this agent once per planned search and collects the summaries.
-
-### Reply agent
-
-Receives the **user’s query** and the **list of web search result strings**. It produces a structured **ReplyToUser**: a single `reply` (the main answer) and optional `follow_up_questions`. The reply is helpful and informative, uses the search results, and keeps headings to the first three. This reply is what the user sees in the chat UI.
+Restrict access to the frontend preview while sign-in is pending. The shared token authenticates calls from Next.js to FastAPI. Anyone who can access the frontend can send chat requests that use the configured API and may trigger coach alerts. [Vercel setup steps](setup.md#vercel-setup)

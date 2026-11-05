@@ -206,3 +206,39 @@ python -c "from dotenv import load_dotenv; load_dotenv(); from pushover_client i
 ```
 
 This command sends a real notification to the configured recipient.
+## Next.js chat
+
+Use Python with the existing coach credentials and Node.js 22. Set a long random
+`COACH_API_TOKEN` in the environment of both servers. For local development,
+put it in the repository root `.env` for Python and in `frontend/.env.local`
+for Next.js. Add `COACH_API_URL=http://127.0.0.1:8000` to `frontend/.env.local`.
+
+From the repository root, start the Python API:
+
+```sh
+python -m pip install -r Sugar_Rehab_Companion/requirements.txt
+python -m uvicorn app:app --app-dir Sugar_Rehab_Companion
+```
+
+In another terminal, start the frontend:
+
+```sh
+cd frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:3000. The transcript lives in the current page and the
+coach receives one message at a time.
+
+### Vercel setup
+
+1. Import this repository as a FastAPI project with `Sugar_Rehab_Companion` as
+   its root directory. Set `OPENAI_API_KEY`, `COACH_API_TOKEN`, and the coach
+   notification credentials on this project.
+2. Import the same repository as a Next.js project with `frontend` as its root
+   directory. Set `COACH_API_URL` to the deployed Python API origin and set
+   `COACH_API_TOKEN` to the same value as the API project.
+3. Restrict access to the frontend preview while developing sign-in. The
+   shared token authenticates Next.js to Python. Anyone who can access the
+   frontend can call its chat route, which runs the coach and may send alerts.
