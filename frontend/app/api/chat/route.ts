@@ -13,19 +13,33 @@ export async function POST(request: Request) {
     return Response.json({ error: "Chat service is not configured." }, { status: 503 });
   }
 
+  const headers = new Headers({
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  });
+  const bypassSecret = process.env.COACH_API_VERCEL_BYPASS_SECRET;
+  if (bypassSecret) {
+    headers.set("x-vercel-protection-bypass", bypassSecret);
+  }
+
   try {
     const upstream = await fetch(new URL("/chat", origin), {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers,
       body: JSON.stringify({ message }),
       signal: AbortSignal.timeout(280_000),
       cache: "no-store",
+      redirect: "manual",
     });
-    if (!upstream.ok) throw new Error(`Coach API returned ${upstream.status}`);
+    if (!upstream.ok) {
+      console.error("Coach API returned HTTP", upstream.status);
+      return Response.json({ error: "The coach could not reply." }, { status: 502 });
+    }
     const { reply } = await upstream.json();
     if (typeof reply !== "string" || !reply.trim()) throw new Error("Invalid coach reply");
     return Response.json({ reply }, { headers: { "Cache-Control": "no-store" } });
-  } catch {
+  } catch (error) {
+    console.error("Coach API request failed", error instanceof Error ? error.name : "Unknown error");
     return Response.json({ error: "The coach could not reply." }, { status: 502 });
   }
 }

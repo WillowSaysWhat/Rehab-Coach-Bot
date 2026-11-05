@@ -242,3 +242,9 @@ coach receives one message at a time.
 3. Restrict access to the frontend preview while developing sign-in. The
    shared token authenticates Next.js to Python. Anyone who can access the
    frontend can call its chat route, which runs the coach and may send alerts.
+
+If the FastAPI preview uses Vercel Authentication, create a **Protection Bypass
+for Automation** secret in the FastAPI project's **Settings → Deployment
+Protection**. Add it to the Next.js project's Preview environment as
+`COACH_API_VERCEL_BYPASS_SECRET` and redeploy the frontend. Next.js sends it
+as a separate header alongside the existing `COACH_API_TOKEN`.
